@@ -1287,7 +1287,7 @@ dependencies = [
 
 [[package]]
 name = "cosmic-greeter"
-version = "1.0.3"
+version = "1.0.4"
 dependencies = [
  "anyhow",
  "async-fn-stream 0.3.0",

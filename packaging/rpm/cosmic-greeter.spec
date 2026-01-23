@@ -47,8 +47,8 @@ install -Dm0644 "%{getenv:COSMIC_GREETER_SOURCE}/debian/cosmic-greeter.sysusers"
 # tmpfiles.d - creates /var/lib/cosmic-greeter and /run/cosmic-greeter
 install -Dm0644 "%{getenv:COSMIC_GREETER_SOURCE}/debian/cosmic-greeter.tmpfiles" "%{buildroot}%{_tmpfilesdir}/cosmic-greeter.conf"
 
-# PAM configuration
-install -Dm0644 "%{getenv:COSMIC_GREETER_SOURCE}/debian/cosmic-greeter.pam" "%{buildroot}%{_sysconfdir}/pam.d/cosmic-greeter"
+# PAM configuration (use Fedora-compatible version, not Debian's @include style)
+install -Dm0644 "%{getenv:COSMIC_GREETER_SOURCE}/packaging/rpm/cosmic-greeter.pam" "%{buildroot}%{_sysconfdir}/pam.d/cosmic-greeter"
 
 # greetd configuration
 install -Dm0644 "%{getenv:COSMIC_GREETER_SOURCE}/cosmic-greeter.toml" "%{buildroot}%{_sysconfdir}/greetd/cosmic-greeter.toml"
@@ -82,7 +82,7 @@ install -Dm0644 "%{getenv:COSMIC_GREETER_SOURCE}/LICENSE" "%{buildroot}%{_datadi
 %{_unitdir}/cosmic-greeter-daemon.service
 %{_sysusersdir}/cosmic-greeter.conf
 %{_tmpfilesdir}/cosmic-greeter.conf
-%config(noreplace) %{_sysconfdir}/pam.d/cosmic-greeter
+%config %{_sysconfdir}/pam.d/cosmic-greeter
 %config(noreplace) %{_sysconfdir}/greetd/cosmic-greeter.toml
 %{_datadir}/backgrounds/cosmic/cosmic-greeter-background.jpg
 
