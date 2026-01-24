@@ -28,4 +28,5 @@ session required        pam_env.so readenv=1
 session substack        system-auth
 session optional        pam_gnome_keyring.so auto_start
 
+-password   optional      pam_gnome_keyring.so use_authtok
 password substack       system-auth
