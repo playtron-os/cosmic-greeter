@@ -10,7 +10,9 @@ URL:            https://github.com/pop-os/cosmic-greeter
 # No BuildRequires - binary is pre-built
 
 Requires:       greetd
+Requires:       greetd-selinux
 Requires:       dbus
+Requires:       fprintd-pam
 Requires:       pam
 Requires:       systemd
 
