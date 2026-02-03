@@ -10,3 +10,6 @@
 /vendor.tar
 /vendor/
 dist/
+.task
+.cache
+node_modules
