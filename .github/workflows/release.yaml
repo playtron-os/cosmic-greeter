@@ -4,8 +4,14 @@ on:
   workflow_dispatch:
     inputs: {}
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   contents: write
+  pull-requests: write
+  issues: write
 
 jobs:
   run-tests:
@@ -20,9 +26,13 @@ jobs:
           fetch-depth: 0
           persist-credentials: true
       - run: |
-          npm install @semantic-release/exec @google/semantic-release-replace-plugin @semantic-release/git @semantic-release/changelog
+          npm install @semantic-release/exec @semantic-release/git @semantic-release/changelog @semantic-release/github
       - run: |
           task release
+          if [ ! -d dist ] || [ -z "$(ls -A dist 2>/dev/null)" ]; then
+            echo "No release was created - no relevant changes found"
+            exit 0
+          fi
           export VERSION=$(ls dist | head -n 1 | cut -d'-' -f3)
           task repo:update ARCH=x86_64 VERSION=$VERSION
           task repo:update ARCH=aarch64 VERSION=$VERSION
