@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/playtron-os/cosmic-greeter/compare/v1.0.0...v1.0.1) (2026-02-04)
+
+
+### Bug Fixes
+
+* missing release CI config ([2385d6a](https://github.com/playtron-os/cosmic-greeter/commit/2385d6a0da4cafa035a4e96f299eafcb12972eca))
+
 # 1.0.0 (2026-02-04)
 
 
