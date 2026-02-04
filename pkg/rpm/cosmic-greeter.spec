@@ -1,6 +1,6 @@
 Name:           cosmic-greeter
 Epoch:          1
-Version:        1.0.7
+Version: 1.0.0
 Release:        1%{?dist}
 Summary:        COSMIC Greeter - Login manager for COSMIC desktop (Playtron fork)
 
