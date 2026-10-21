@@ -1,3 +1,10 @@
+## [1.0.2](https://github.com/playtron-os/cosmic-greeter/compare/v1.0.1...v1.0.2) (2026-10-21)
+
+
+### Bug Fixes
+
+* **locker:** read the user's picture again on every lock ([b2be32c](https://github.com/playtron-os/cosmic-greeter/commit/b2be32c391b83171557847d091ee5cc4fe4f7ba0))
+
 ## [1.0.1](https://github.com/playtron-os/cosmic-greeter/compare/v1.0.0...v1.0.1) (2026-02-04)
 
 
