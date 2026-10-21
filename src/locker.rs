@@ -50,6 +50,19 @@ fn lockfile_opt() -> Option<PathBuf> {
     Some(runtime_dir.join(format!("cosmic-greeter-{}.lock", session_id)))
 }
 
+/// The user's picture as AccountsService keeps it, read afresh.
+fn user_icon(name: &str) -> Option<widget::image::Handle> {
+    user_icon_in(std::path::Path::new(ACCOUNTS_ICONS), name)
+}
+
+const ACCOUNTS_ICONS: &str = "/var/lib/AccountsService/icons";
+
+fn user_icon_in(dir: &std::path::Path, name: &str) -> Option<widget::image::Handle> {
+    fs::read(dir.join(name))
+        .ok()
+        .map(widget::image::Handle::from_bytes)
+}
+
 pub fn main(user: pwd::Passwd) -> Result<(), Box<dyn std::error::Error>> {
     color_eyre::install().wrap_err("failed to install color_eyre error handler")?;
 
@@ -1108,6 +1121,8 @@ impl cosmic::Application for App {
                 State::Unlocked => {
                     tracing::info!("session locking");
                     self.state = State::Locking;
+                    // The locker starts with the session, and the picture can change since.
+                    self.flags.user_icon = user_icon(&self.flags.user_data.name);
                     // Clear errors
                     self.common.error_opt = None;
                     // Clear value_tx
@@ -1250,5 +1265,29 @@ impl cosmic::Application for App {
         }
 
         Subscription::batch(subscriptions)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn a_picture_changed_after_login_is_read_again() {
+        let dir = env::temp_dir().join(format!("cosmic-greeter-icons-{}", process::id()));
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("kora"), b"first").unwrap();
+        let first = user_icon_in(&dir, "kora").unwrap();
+        fs::write(dir.join("kora"), b"second").unwrap();
+        let second = user_icon_in(&dir, "kora").unwrap();
+        let missing = user_icon_in(&dir, "nobody");
+        fs::remove_dir_all(&dir).unwrap();
+
+        assert_ne!(first.id(), second.id(), "a new picture is a new image");
+        let widget::image::Handle::Bytes(_, bytes) = second else {
+            panic!("the picture is read as bytes");
+        };
+        assert_eq!(&bytes[..], b"second");
+        assert!(missing.is_none());
     }
 }
