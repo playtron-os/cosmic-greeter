@@ -50,6 +50,18 @@ fn lockfile_opt() -> Option<PathBuf> {
     Some(runtime_dir.join(format!("cosmic-greeter-{}.lock", session_id)))
 }
 
+/// Logind's `LockedHint` follows the lock, so apps watching the session can lock with it.
+fn set_locked_hint(locked: bool) -> Task<Message> {
+    #[cfg(feature = "logind")]
+    return cosmic::Task::future(async move { crate::logind::set_locked_hint(locked).await.err() })
+        .and_then(move |err| {
+            tracing::warn!("failed to set the locked hint to {locked}: {err}");
+            Task::none()
+        });
+    #[cfg(not(feature = "logind"))]
+    Task::none()
+}
+
 /// The user's picture as AccountsService keeps it, read afresh.
 fn user_icon(name: &str) -> Option<widget::image::Handle> {
     user_icon_in(std::path::Path::new(ACCOUNTS_ICONS), name)
@@ -995,6 +1007,7 @@ impl cosmic::Application for App {
                             tracing::error!("no rectangle for subsurface...");
                         }
                     }
+                    commands.push(set_locked_hint(true));
                     return Task::batch(commands);
                 }
                 SessionLockEvent::Unlocked => {
@@ -1002,6 +1015,7 @@ impl cosmic::Application for App {
                     self.state = State::Unlocked;
 
                     let mut commands = Vec::new();
+                    commands.push(set_locked_hint(false));
                     for (_output, surface_id) in self.common.surface_ids.iter() {
                         self.common.surface_names.remove(surface_id);
                         self.common.window_size.remove(surface_id);
