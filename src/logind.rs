@@ -29,6 +29,23 @@ pub async fn suspend() -> zbus::Result<()> {
     manager.suspend(false).await
 }
 
+/// Tells logind whether the session is locked. Its `LockedHint` is what the
+/// screensaver interface and `loginctl` report.
+pub async fn set_locked_hint(locked: bool) -> zbus::Result<()> {
+    let connection = Connection::system().await?;
+    set_locked_hint_of(&connection, std::os::unix::process::parent_id(), locked).await
+}
+
+async fn set_locked_hint_of(connection: &Connection, pid: u32, locked: bool) -> zbus::Result<()> {
+    let manager = ManagerProxy::new(connection).await?;
+    let session_path = manager.get_session_by_PID(pid).await?;
+    let session = SessionProxy::builder(connection)
+        .path(&session_path)?
+        .build()
+        .await?;
+    session.set_locked_hint(locked).await
+}
+
 async fn inhibit(manager: &ManagerProxy<'_>) -> zbus::Result<OwnedFd> {
     let what = InhibitType::Sleep;
     let who = "COSMIC Greeter";
@@ -121,5 +138,60 @@ pub async fn handler(msg_tx: &mut mpsc::Sender<Message>) -> Result<(), Box<dyn E
         });
 
         interval.tick().await;
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::Mutex;
+    use zbus::zvariant::OwnedObjectPath;
+
+    const SESSION_PATH: &str = "/org/freedesktop/login1/session/_31";
+
+    struct FakeManager;
+
+    #[zbus::interface(name = "org.freedesktop.login1.Manager")]
+    impl FakeManager {
+        #[zbus(name = "GetSessionByPID")]
+        fn get_session_by_pid(&self, pid: u32) -> zbus::fdo::Result<OwnedObjectPath> {
+            match pid {
+                4242 => Ok(OwnedObjectPath::try_from(SESSION_PATH).unwrap()),
+                _ => Err(zbus::fdo::Error::Failed(format!("no session for {pid}"))),
+            }
+        }
+    }
+
+    struct FakeSession(Arc<Mutex<Vec<bool>>>);
+
+    #[zbus::interface(name = "org.freedesktop.login1.Session")]
+    impl FakeSession {
+        fn set_locked_hint(&self, locked: bool) {
+            self.0.lock().unwrap().push(locked);
+        }
+    }
+
+    #[tokio::test]
+    async fn the_locked_hint_is_set_on_the_lockers_session() {
+        let hints = Arc::new(Mutex::new(Vec::new()));
+        let (logind, locker) = tokio::net::UnixStream::pair().unwrap();
+        let logind = zbus::connection::Builder::unix_stream(logind)
+            .server(zbus::Guid::generate())
+            .unwrap()
+            .p2p()
+            .serve_at("/org/freedesktop/login1", FakeManager)
+            .unwrap()
+            .serve_at(SESSION_PATH, FakeSession(hints.clone()))
+            .unwrap()
+            .build();
+        let locker = zbus::connection::Builder::unix_stream(locker).p2p().build();
+        let (_logind, locker) = tokio::join!(logind, locker);
+        let locker = locker.unwrap();
+
+        set_locked_hint_of(&locker, 4242, true).await.unwrap();
+        set_locked_hint_of(&locker, 4242, false).await.unwrap();
+        assert!(set_locked_hint_of(&locker, 1, true).await.is_err());
+
+        assert_eq!(*hints.lock().unwrap(), [true, false]);
     }
 }

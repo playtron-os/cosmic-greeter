@@ -88,6 +88,9 @@ image = { version = "0.25", default-features = false, features = [
 version = "0.10.3"
 features = ["tokio-codec"]
 
+[dev-dependencies]
+zbus = { workspace = true, features = ["p2p"] }
+
 [features]
 default = ["logind", "networkmanager", "upower", "systemd"]
 logind = ["logind-zbus", "systemd"]
