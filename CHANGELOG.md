@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/playtron-os/cosmic-greeter/compare/v1.0.2...v1.1.0) (2026-10-29)
+
+
+### Features
+
+* **locker:** set logind's LockedHint while the screen is locked ([0b19229](https://github.com/playtron-os/cosmic-greeter/commit/0b19229709ec61e2dcb639a0bc62141405f2385b))
+
 ## [1.0.2](https://github.com/playtron-os/cosmic-greeter/compare/v1.0.1...v1.0.2) (2026-10-21)
 
 
